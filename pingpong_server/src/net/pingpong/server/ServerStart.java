@@ -1,9 +1,10 @@
 package net.pingpong.server;
 
-public class serverStart {
+public class ServerStart {
 
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
+		int ip = 5555;
+		Match match = new Match(ip);
 
 	}
 

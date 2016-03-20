@@ -1,41 +1,49 @@
 package net.pingpong.server;
 
+import net.pingpong.lib.GameConst;
 import net.pingpong.lib.Pilota;
-import net.pingpong.lib.MatchState;
+import net.pingpong.lib.Tick;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 
 public class Match {
 	ServerSocket server;
-	MatchState match_state;
+	DataMatch data_match;
 	Pilota pilota;
-	int port;
-	
-	public Match(int port){
-		this.port = port;
-	}
+	Player[] players;
+	boolean loop = true;
 	
 	public void start(){
 		try {
-			server = new ServerSocket(port);
+			server = new ServerSocket(GameConst.PORT);
 			System.out.println("connectat");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		match_state = new MatchState();
+		data_match = new DataMatch();
 		pilota = new Pilota();
 		addPlayers();
 		
 	}
 	
 	private void addPlayers(){
-		for(int i=1; i <= 2; i++){
-			try {
-				new Player(server.accept(),this, i).start();
-				System.out.println("player id:" + i);
-			} catch (IOException e) {
-				e.printStackTrace();
+		players = new Player[2];
+		for(int i=0; i < 2; i++){
+			players[i] = new Player(this, (i+1));
+			System.out.println("player id:" + (i+1));
+		}
+	}
+	
+	public void run(){
+		pilota.init();
+		Tick tick = new Tick();
+		tick.start();
+		while(loop){
+			if(tick.update()){
+				pilota.tick();
 			}
+			
 		}
 	}
 }

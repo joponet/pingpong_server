@@ -1,61 +1,50 @@
 package net.pingpong.server;
 
 import java.io.IOException;
-import java.io.ObjectOutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.SocketException;
 
+import net.pingpong.lib.GameParameters;
 import net.pingpong.lib.MatchState;
 
 public class Output extends Thread{
-	ObjectOutputStream out;
+	DatagramSocket socket;
 	Match match;
-	int id;
-	public Output(Match match, int id){
-		super("Output(" + id + ")" );
+	byte[] buffer = new byte[256];
+	
+	public Output(Match match){
+		super("Output");
 		this.match = match;
-		this.id = id;
 	}
 	public void run(){
 		try {
-			System.out.println(id);
-			out = new ObjectOutputStream(match.players[id-1].socket.getOutputStream());
-		} catch (IOException e) {e.printStackTrace();}
-		
+			socket = new DatagramSocket(GameParameters.SERVER_PORT_OUT);
+		} catch (SocketException e) {e.printStackTrace();}
+		System.out.println("Output");
 		//loop
 		while(true){
-			sendMatchState();
+			if(match.init){
+				for(int i=0; i < 1; i++){
+					sendMatchState(i);
+				}
+			}
+			else{System.out.println("Output waiting");}
 			try {
 				Thread.sleep(20);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			} catch (InterruptedException e) {e.printStackTrace();}
 		}
 	}
-	public void sendMatchState(){
+	
+	public void sendMatchState(int i){
 		MatchState match_state = new MatchState();
-		if(id == 1){
-			match_state.setRposX(match.data_match.getP2posX());
-			
-			match_state.setLgoal(match.data_match.getP1goals());
-			match_state.setRgoal(match.data_match.getP2goals());
-			
-			match_state.setBpos(match.data_match.getBposX(), match.data_match.getBposY());
-		}
-		if(id == 2){
-			match_state.setRposX(match.data_match.getP1posX());
-			
-			match_state.setLgoal(match.data_match.getP2goals());
-			match_state.setRgoal(match.data_match.getP1goals());
-			
-			match_state.setBpos(match.data_match.getBposX(), match.data_match.getBposY());
-
-		}
+		match_state.setRposX(match.players[i].getPos());
+		buffer = match_state.toByte();
+		DatagramPacket packet = new DatagramPacket(buffer, buffer.length, 
+				match.players[i].getIP(), GameParameters.CLIENT_PORT_IN);
 		try {
-			out.writeObject(match_state);
-			out.flush();
-			out.reset();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+			socket.send(packet);
+		} catch (IOException e) {e.printStackTrace();}
+		
 	}
 }

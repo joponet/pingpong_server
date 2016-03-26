@@ -1,68 +1,81 @@
 package net.pingpong.server;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.SocketException;
 
+import net.pingpong.lib.GameParameters;
 import net.pingpong.lib.PlayerState;
 
 public class Input extends Thread{
-	ObjectInputStream in;
+	DatagramSocket socket;
+	DatagramPacket packet;
 	Match match;
-	int id;
+	byte[] buffer = new byte[256];
 	
-	public Input(Match match, int id){
-		super("Input(" + id + ")" );
+	public Input(Match match){
+		super("Input");
 		this.match = match;
-		this.id = id;
 	}
 	
 	public void run(){
+		//init
 		try {
-			in = new ObjectInputStream(match.players[id-1].socket.getInputStream());
-		} catch (IOException e) {e.printStackTrace();}
-		
+			socket = new DatagramSocket(GameParameters.SERVER_PORT_IN);
+		} catch (SocketException e) {e.printStackTrace();}
+		System.out.println("conectat: " + socket.getInetAddress());
+		packet = new DatagramPacket(buffer, buffer.length);
+		addPlayer();
+		System.out.println("start");
 		//loop
 		while(true){
+			try {
+				socket.receive(packet);
+			} catch (IOException e) {e.printStackTrace();}
 			updateMatchState();
 		}
 	}
 	
 	public void updateMatchState(){
-		PlayerState player_state = recivePlayerState();
-		if(id == 1){
-			match.data_match.setP1posX(player_state.getPos());
+		PlayerState player_state = new PlayerState();
+		player_state.set(packet.getData());
+		int id = 0;
+		if(packet.getAddress().equals(match.players[0].getIP())){id = 1;}
+		//if(packet.getAddress().equals(match.players[1].getIP())){id = 2;}
+		if(id != 0){
+		match.players[(id - 1)].setPos(player_state.getPos());
+		//System.out.println("pos: " + player_state.getPos());
+		/*
 			if(player_state.isGoal()){
-				match.data_match.incP2goal();
+				match.players[(id - 1)].incGoals();
 				System.out.println("Player2 make a goal");
 			}
 			if(player_state.getShoot() != 0){
 				match.pilota.shoot(player_state.getShoot());
-			}
+			}*/
 		}
-		if(id == 2){
-			match.data_match.setP2posX(player_state.getPos());
-			if(player_state.isGoal()){
-				match.data_match.incP1goal();
-				System.out.println("Player1 make a goal");
-			}
-			if(player_state.getShoot() != 0){
-				match.pilota.shoot(player_state.getShoot());
-			}
-		}
+		else{System.out.println("Error with the ip");}
 	}
 	
-	//recive methods
-	public PlayerState recivePlayerState(){
-		PlayerState  player_state = null;
+	public void addPlayer(){
 		try {
-			player_state = (PlayerState) in.readObject();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		//System.out.println("player(" + id + ") posX = " + player_state.getPos());
-		return player_state;
+			socket.receive(packet);
+		} catch (IOException e) {e.printStackTrace();}
+		match.players[0] = new Player(1 , packet.getAddress());
+		match.players[1] = null;
+		/*
+		boolean loop = true;
+		while(loop){
+			try {
+				socket.receive(packet);
+			} catch (IOException e) {e.printStackTrace();}
+			if(packet.getAddress().equals( match.players[0].getIP())){
+				match.players[1] = new Player(2, packet.getAddress());
+				match.players[1].createPacket(buffer);
+				loop = false;
+			}
+		}*/
+		match.init = true;
 	}
-
 }

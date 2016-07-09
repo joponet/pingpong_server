@@ -42,18 +42,17 @@ public class Input extends Thread{
 		player_state.set(packet.getData());
 		int id = 0;
 		if(packet.getAddress().equals(match.players[0].getIP())){id = 1;}
-		//if(packet.getAddress().equals(match.players[1].getIP())){id = 2;}
+		if(packet.getAddress().equals(match.players[1].getIP())){id = 2;}
 		if(id != 0){
-		match.players[(id - 1)].setPos(player_state.getPos());
-		//System.out.println("pos: " + player_state.getPos());
-		/*
+			match.players[(id - 1)].setPos(player_state.getPos());
+			//System.out.println("pos: " + player_state.getPos());
 			if(player_state.isGoal()){
-				match.players[(id - 1)].incGoals();
-				System.out.println("Player2 make a goal");
+				//match.players[invertID(id-1)].incGoals();
+				match.ball.goal(id);
 			}
-			if(player_state.getShoot() != 0){
-				match.pilota.shoot(player_state.getShoot());
-			}*/
+			else if(player_state.getShoot()){
+				match.ball.shoot(id);
+			}
 		}
 		else{System.out.println("Error with the ip");}
 	}
@@ -63,19 +62,26 @@ public class Input extends Thread{
 			socket.receive(packet);
 		} catch (IOException e) {e.printStackTrace();}
 		match.players[0] = new Player(1 , packet.getAddress());
-		match.players[1] = null;
-		/*
+		match.players[1] = new Player(2);
+		match.clients++;
+		System.out.println("jugador 1 conectat");
 		boolean loop = true;
 		while(loop){
 			try {
 				socket.receive(packet);
 			} catch (IOException e) {e.printStackTrace();}
-			if(packet.getAddress().equals( match.players[0].getIP())){
-				match.players[1] = new Player(2, packet.getAddress());
-				match.players[1].createPacket(buffer);
+			if(!packet.getAddress().equals( match.players[0].getIP())){
+				match.players[1].setIP(packet.getAddress());
+				System.out.println("jugador 2 conectat");
 				loop = false;
 			}
-		}*/
-		match.init = true;
+		}
+		match.clients++;
+		match.pause = false;
+	}
+	public int invertID(int id){
+		if(id == 0){return 1;}
+		if(id == 1){return 0;}
+		return 0;
 	}
 }

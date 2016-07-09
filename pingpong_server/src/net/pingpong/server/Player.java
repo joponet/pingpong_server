@@ -1,7 +1,8 @@
 package net.pingpong.server;
 
-import java.net.DatagramPacket;
 import java.net.InetAddress;
+
+import net.pingpong.lib.GameParameters;
 
 public class Player{
 	int id;
@@ -14,11 +15,20 @@ public class Player{
 		this.ip = ip;
 	}
 	
+	public Player(int id){
+		this.id = id;
+		pos = 122;
+	}
+	
+	public void setIP(InetAddress ip){
+		this.ip = ip;
+	}
+	
 	public void setPos(int x){
 		pos = x;
 	}
 	public int getPos(){
-		return pos;
+		return GameParameters.GAME_WIDTH - GameParameters.PLAYER_WIDTH - pos;
 	}
 	public int getGoals(){
 		return goals;

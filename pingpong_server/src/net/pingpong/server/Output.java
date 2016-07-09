@@ -24,21 +24,19 @@ public class Output extends Thread{
 		System.out.println("Output");
 		//loop
 		while(true){
-			if(match.init){
-				for(int i=0; i < 1; i++){
-					sendMatchState(i);
-				}
+			for(int i=0; i < match.clients; i++){
+				sendMatchState(i);
 			}
-			else{System.out.println("Output waiting");}
 			try {
 				Thread.sleep(20);
 			} catch (InterruptedException e) {e.printStackTrace();}
 		}
 	}
-	
+	//122
 	public void sendMatchState(int i){
 		MatchState match_state = new MatchState();
-		match_state.setRposX(match.players[i].getPos());
+		match_state.set(match.players[invertID(i)].getPos(), match.ball.getPosX(i+1), match.ball.getPosY(i+1),
+				match.players[i].getGoals(), match.players[invertID(i)].getGoals(), match.pause);
 		buffer = match_state.toByte();
 		DatagramPacket packet = new DatagramPacket(buffer, buffer.length, 
 				match.players[i].getIP(), GameParameters.CLIENT_PORT_IN);
@@ -46,5 +44,10 @@ public class Output extends Thread{
 			socket.send(packet);
 		} catch (IOException e) {e.printStackTrace();}
 		
+	}
+	public int invertID(int id){
+		if(id == 0){return 1;}
+		if(id == 1){return 0;}
+		return 0;
 	}
 }
